@@ -3,93 +3,93 @@
 #include<sstream>
 #include<ctime>
 #include<cstdlib>
-#include<vector>
 #include<fstream>
 using namespace std;
-int Evaluate(vector<int> *s)//計算總和的f
+int Evaluate(bool *s,int bits)//計算總和的f
 {
 	int f=0;
-	for(vector<int>::iterator it=s->begin();it!=s->end();it++)
-		f+=*it;
+	for(int i=0;i<bits;i++)
+		f+=s[i];
 	return f;
 }
-void EnumNext(vector<int> *s)//ES找下一個State
+void EnumNext(bool *v,int bits)//ES找下一個State
 {
-	for(vector<int>::iterator it=s->end()-1;it!=s->begin();it--)
+	for(int i=bits-1;i>=0;i--)
 	{
-		if(*it==1)
-			*it=0;
+		if(v[i]==1)
+			v[i]=0;
 		else
 		{
-			*it=1;
+			v[i]=1;
 			break;
 		}
 	}
 }
-void PrintState(vector<int> *s,int f1)//顯示state
+void NeighborSelection(bool *s,bool *v,int bits)//HC找一個隨機的state變更
+{
+	copy(s,s+bits,v);
+	int change = rand()%bits;
+	v[change]=v[change]%2+1;
+}
+void PrintState(bool *s,int bits,int f1)//顯示state
 {
 	cout<<f1<<":";
-	for(vector<int>::iterator it=s->begin();it!=s->end();it++)
-		cout<<*it;
+	for(int i=0;i<bits;i++)
+		cout<<s[i];
 	cout<<endl;
 }
-
-vector<int>* NeighborSelection(vector<int> *s)//HC找一個隨機的state變更
-{
-	vector<int> *v=new vector<int>();
-	v->assign(s->begin(),s->end());
-	int change = rand()%s->size();
-	v->at(change)=(v->at(change)+1)%2;
-	return v;
-}
-void HillClimbing(int iterations,int bits,vector<double> *ans)//HC
+int* HillClimbing(int iterations,int bits,int *ans)//HC
 {
 	//random init state
-	vector<int> state;
-	vector<int> *s=new vector<int>(bits,0);
-	for(vector<int>::iterator it=s->begin();it!=s->end();it++)
-		*it=rand()%2;
+	bool *s,*v;
+	s = new bool[bits];
+	v = new bool[bits];
+	for(int i=0;i<bits;i++)
+		s[i]=rand()%2;
 	
-	int f1= Evaluate(s);//E->f1
+	int f1= Evaluate(s,bits);//E->f1
 	for(int i=0;i<iterations;i++)
 	{
-		vector<int> *v=NeighborSelection(s);//change 1 bits in next state
-		int f2=Evaluate(v);
+		NeighborSelection(s,v,bits);//change 1 bits in next state
+		int f2=Evaluate(v,bits);
 		if(f2>f1)
 		{
-			delete s;
-			s=v;
+			copy(v,v+bits,s);
 			f1=f2;
 		}
-		else
-			delete v;
-		ans->at(i)+=f1;
-		//PrintState(s,f1);
+		ans[i]+=f1;
+		//PrintState(s,bits,f1);
 	}
+	return ans;
 }
-void ExhaustiveSearch(int iterations,int bits,vector<double> *ans)//ES
+int* ExhaustiveSearch(int iterations,int bits,int *ans)//ES
 {
-	vector<int> *s,*en;
-	s=new vector<int>(bits,0);//init state
-	en=new vector<int>(bits,0);//用於數數字	
-	int f1= Evaluate(s);
+	bool *s,*v;
+	s=new bool[bits];//init state
+	v=new bool[bits];//用於數數字
+	for(int i=0;i<bits;i++)
+		s[i]=0;
+	copy(s,s+bits,v);
+	int f1= Evaluate(s,bits);
 	for(int i=0;i<iterations;i++)
 	{
-		EnumNext(en);//按照順序+1
-		int f2=Evaluate(en);	
+		EnumNext(v,bits);//按照順序+1
+		int f2=Evaluate(v,bits);
 		if(f2>f1)
 		{
-			s->assign(en->begin(),en->end());
+			copy(v,v+bits,s);
 			f1=f2;
 		}
-		ans->at(i)+=f1;
-		//PrintState(s,f1);
+		ans[i]+=f1;
+		//PrintState(s,bits,f1);
 	}
+	return ans;
 }
 int main(int argc,char** argv)
 {
 	srand(time(NULL));
-	string useAlgorithm,fileName;
+	string useAlgorithm;
+	char* fileName;
 	int runs,iterations,bits;
 	if(argc<6)
 	{
@@ -104,23 +104,25 @@ int main(int argc,char** argv)
 		istringstream(argv[3])>>iterations;
 		istringstream(argv[4])>>bits;
 	}
-	
-	vector<double> ans(iterations,0);
+	int *ans;
+	ans = new int[iterations];
+	for(int i=0;i<iterations;i++)
+		ans[i]=0;
 	for(int i=0;i<runs;i++)
 	{
 		if (useAlgorithm.compare("hc")==0)
-			HillClimbing(iterations,bits,&ans);
+			ans=HillClimbing(iterations,bits,ans);
 		else if (useAlgorithm.compare("es")==0)
-			ExhaustiveSearch(iterations,bits,&ans);
+			ans=ExhaustiveSearch(iterations,bits,ans);
 		else
-		{	
+		{
 			cerr <<"algotithm argument must be hc or es"<<endl;
 			return 1;
-		}
+		}	
 	}
 	fstream fp;
-	fp.open("test.csv", ios::out);
-	for(int i=0;i<=ans.size();i++)
+	fp.open(fileName, ios::out);
+	for(int i=0;i<iterations;i++)
 	{
 		ans[i]/=runs;
 		fp<<i<<","<<ans[i]<<endl;
