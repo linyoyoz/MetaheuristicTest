@@ -4,90 +4,13 @@
 #include<ctime>
 #include<cstdlib>
 #include<fstream>
+#include"HillClimbing.h"
+#include"ExhaustiveSearch.h"
 using namespace std;
-int Evaluate(bool *s,int bits)//計算總和的f
-{
-	int f=0;
-	for(int i=0;i<bits;i++)
-		f+=s[i];
-	return f;
-}
-void EnumNext(bool *v,int bits)//ES找下一個State
-{
-	for(int i=bits-1;i>=0;i--)
-	{
-		if(v[i]==1)
-			v[i]=0;
-		else
-		{
-			v[i]=1;
-			break;
-		}
-	}
-}
-void NeighborSelection(bool *s,bool *v,int bits)//HC找一個隨機的state變更
-{
-	copy(s,s+bits,v);
-	int change = rand()%bits;
-	v[change]=v[change]%2+1;
-}
-void PrintState(bool *s,int bits,int f1)//顯示state
-{
-	cout<<f1<<":";
-	for(int i=0;i<bits;i++)
-		cout<<s[i];
-	cout<<endl;
-}
-int* HillClimbing(int iterations,int bits,int *ans)//HC
-{
-	//random init state
-	bool *s,*v;
-	s = new bool[bits];
-	v = new bool[bits];
-	for(int i=0;i<bits;i++)
-		s[i]=rand()%2;
-	
-	int f1= Evaluate(s,bits);//E->f1
-	for(int i=0;i<iterations;i++)
-	{
-		NeighborSelection(s,v,bits);//change 1 bits in next state
-		int f2=Evaluate(v,bits);
-		if(f2>f1)
-		{
-			copy(v,v+bits,s);
-			f1=f2;
-		}
-		ans[i]+=f1;
-		//PrintState(s,bits,f1);
-	}
-	return ans;
-}
-int* ExhaustiveSearch(int iterations,int bits,int *ans)//ES
-{
-	bool *s,*v;
-	s=new bool[bits];//init state
-	v=new bool[bits];//用於數數字
-	for(int i=0;i<bits;i++)
-		s[i]=0;
-	copy(s,s+bits,v);
-	int f1= Evaluate(s,bits);
-	for(int i=0;i<iterations;i++)
-	{
-		EnumNext(v,bits);//按照順序+1
-		int f2=Evaluate(v,bits);
-		if(f2>f1)
-		{
-			copy(v,v+bits,s);
-			f1=f2;
-		}
-		ans[i]+=f1;
-		//PrintState(s,bits,f1);
-	}
-	return ans;
-}
+
 int main(int argc,char** argv)
 {
-	srand(time(NULL));
+	srand(time(NULL));//每次執行依照時間產生亂數
 	string useAlgorithm;
 	char* fileName;
 	int runs,iterations,bits;
@@ -104,7 +27,7 @@ int main(int argc,char** argv)
 		istringstream(argv[3])>>iterations;
 		istringstream(argv[4])>>bits;
 	}
-	int *ans;
+	int *ans;//用來紀錄每個iterations目前找到的最好結果
 	ans = new int[iterations];
 	for(int i=0;i<iterations;i++)
 		ans[i]=0;
@@ -121,12 +44,13 @@ int main(int argc,char** argv)
 		}	
 	}
 	fstream fp;
-	fp.open(fileName, ios::out);
-	for(int i=0;i<iterations;i++)
+	fp.open("test.csv", ios::out);
+	for(int i=0;i<iterations;i++)//將每個iterations之結果寫入檔案
 	{
 		ans[i]/=runs;
 		fp<<i<<","<<ans[i]<<endl;
 	}
+	cout<<"find max:"<<ans[iterations-1]<<endl;
 	fp<<endl;
     fp.close();
 	
