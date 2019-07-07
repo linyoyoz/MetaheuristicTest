@@ -1,5 +1,9 @@
 # week1 homework  
 
+編譯:  
+g++ -c ExhaustiveSearch.cpp  HillClimbing.cpp  
+g++ -o search ExhaustiveSearch.o HillClimbing.o search.cpp  
+
 測試HC 和 ES兩種演算法對於100bits之One Max Problem之結果  
 search.cpp為主要程式碼，裏頭包含ES和HC兩種演算法，參數格式如同規定  
 
